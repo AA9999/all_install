@@ -1085,48 +1085,6 @@ ssr_conf() {
 }
 EOF
 }
-tls_generate_script_install() {
-  if [[ "${cmd}" == "yum" ]]; then
-    ${cmd} install socat nc -y
-  else
-    ${cmd} install socat netcat -y
-  fi
-  sucess_or_fail "安装 tls 证书生成脚本依赖"
-
-  curl https://get.acme.sh | sh
-  sucess_or_fail "安装 tls 证书生成脚本"
-  source ~/.bashrc
-}
-tls_generate() {
-  if [[ -f "/data/${domain}/fullchain.crt" ]] && [[ -f "/data/${domain}/${domain}.key" ]]; then
-    echo -e "${Info}证书已存在……不需要再重新签发了……"
-  else
-    if "$HOME"/.acme.sh/acme.sh --issue -d "${domain}" --standalone -k ec-256 --force --test; then
-      echo -e "${Info} TLS 证书测试签发成功，开始正式签发"
-      rm -rf "$HOME/.acme.sh/${domain}_ecc"
-      sleep 2
-    else
-      echo -e "${Error}TLS 证书测试签发失败 "
-      rm -rf "$HOME/.acme.sh/${domain}_ecc"
-      exit 1
-    fi
-
-    if "$HOME"/.acme.sh/acme.sh --issue -d "${domain}" --standalone -k ec-256 --force; then
-      echo -e "${Info} TLS 证书生成成功 "
-      sleep 2
-      [[ ! -d "/data" ]] && mkdir /data
-      [[ ! -d "/data/${domain}" ]] && mkdir "/data/${domain}"
-      if "$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /data/"${domain}"/fullchain.crt --keypath /data/"${domain}"/"${domain}".key --ecc --force; then
-        echo -e "${Info}证书配置成功 "
-        sleep 2
-      fi
-    else
-      echo -e "${Error} TLS 证书生成失败"
-      rm -rf "$HOME/.acme.sh/${domain}_ecc"
-      exit 1
-    fi
-  fi
-}
 trojan_qr_config() {
   uuid=$(cat /proc/sys/kernel/random/uuid)
   touch ${trojan_qr_config_file}
